@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
+import { supabase } from "./supabase";
+import { saveReport, getReports } from "./api";  // pastikan path benar
+
 
 export type Role = "admin" | "umum";
 export type User = {
@@ -141,50 +144,35 @@ function getSnapshot(): Report[] {
 // ── Public hook ─────────────────────────────────────────────────────
 
 export function useReports() {
-  const reports = useSyncExternalStore(subscribe, getSnapshot);
+  const [reports, setReports] = useState<any[]>([]);
 
-  const addReport = useCallback(
-    (
-      report: Omit<Report, "id" | "createdAt" | "tanggal"> & {
-        id?: string;
-        createdAt?: string;
-        tanggal?: string;
-      }
-    ) => {
-      const newReport: Report = {
-        ...report,
-        id: report.id || crypto.randomUUID(),
-        createdAt: report.createdAt || new Date().toISOString(),
-        tanggal:
-          report.tanggal ||
-          new Date().toLocaleString("id-ID", {
-            dateStyle: "full",
-            timeStyle: "short",
-          }),
-      };
-      writeReports([newReport, ...readReports()]);
-      return newReport;
-    },
-    []
-  );
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const updateReport = useCallback(
-    (id: string, updates: Partial<Report>) => {
-      writeReports(
-        readReports().map((r) => (r.id === id ? { ...r, ...updates } : r))
-      );
-    },
-    []
-  );
+  async function loadData() {
+    const data = await getReports();
+    setReports(data);
+  }
 
-  const deleteReport = useCallback((id: string) => {
-    writeReports(readReports().filter((r) => r.id !== id));
+  const addReport = useCallback(async (report: any) => {
+    const savedReport = await saveReport(report);
+    if (savedReport) {
+      await loadData();
+    }
+    return savedReport;
+  }, []);
+
+  const updateReport = useCallback((id: string, report: any) => {
+    alert("Update belum aktif");
+  }, []);
+
+  const deleteReport = useCallback(() => {
+    alert("Delete belum aktif");
   }, []);
 
   const getReport = useCallback(
-    (id: string) => {
-      return reports.find((r) => r.id === id);
-    },
+    (id: string) => reports.find((r) => r.id === id),
     [reports]
   );
 

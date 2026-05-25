@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReports } from "@/lib/store";
+import { getReportById } from "@/lib/api";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit, Printer, Download, Loader2 } from "lucide-react";
@@ -13,8 +14,20 @@ export default function PreviewPage() {
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [fallbackReport, setFallbackReport] = useState<any>(null);
 
-  const report = id ? getReport(id) : null;
+  const reportFromStore = id ? getReport(id) : null;
+  const report = reportFromStore || fallbackReport;
+
+  useEffect(() => {
+    if (!reportFromStore && id) {
+      getReportById(id).then((report) => {
+        if (report) {
+          setFallbackReport(report);
+        }
+      });
+    }
+  }, [id, reportFromStore]);
 
   if (!report) {
     return (

@@ -186,7 +186,7 @@ export default function FormulirPage() {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     const { tanggalInput, ...rest } = values;
     const payload = {
       ...rest,
@@ -199,7 +199,15 @@ export default function FormulirPage() {
       toast({ title: "Berhasil", description: "Laporan berhasil diperbarui" });
       setLocation(`/preview/${values.id}`);
     } else {
-      const newReport = addReport(payload);
+      const newReport = await addReport(payload);
+      if (!newReport) {
+        toast({
+          title: "Gagal",
+          description: "Gagal menyimpan laporan ke database.",
+          variant: "destructive",
+        });
+        return;
+      }
       toast({ title: "Berhasil", description: "Laporan berhasil disimpan" });
       setLocation(`/preview/${newReport.id}`);
     }
