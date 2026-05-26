@@ -8,11 +8,12 @@ function maskKey(value: string) {
   return `${value.slice(0, 6)}...${value.slice(-6)}`;
 }
 
-console.group("Supabase env debug");
-console.log("VITE_SUPABASE_URL:", url ? "ok" : "MISSING");
-console.log("VITE_SUPABASE_ANON_KEY:", key ? maskKey(key) : "MISSING");
-console.log("import.meta.env:", import.meta.env);
-console.groupEnd();
+if (import.meta.env.DEV) {
+  console.group("Supabase env debug");
+  console.log("VITE_SUPABASE_URL:", url ? "ok" : "MISSING");
+  console.log("VITE_SUPABASE_ANON_KEY:", key ? maskKey(key) : "MISSING");
+  console.groupEnd();
+}
 
 if (!url || !key) {
   throw new Error(
