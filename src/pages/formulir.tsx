@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import {
   tanggalToDatetimeLocal,
 } from "@/lib/datetime";
 import { generateTindakLanjut } from "@/lib/generate-tindak-lanjut";
+import { getReportById } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -86,9 +87,21 @@ export default function FormulirPage() {
   const tindakLanjutTouched = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchString = useSearch();
+  const searchParams = new URLSearchParams(searchString);
   const editId = searchParams.get("edit");
-  const editReport = editId ? getReport(editId) : null;
+  const editReportFromStore = editId ? getReport(editId) : null;
+  const [editReportAsync, setEditReportAsync] = useState<any>(null);
+
+  const editReport = editReportFromStore || editReportAsync;
+
+  useEffect(() => {
+    if (editId && !editReportFromStore) {
+      getReportById(editId).then(data => {
+        if (data) setEditReportAsync(data);
+      });
+    }
+  }, [editId, editReportFromStore]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -123,13 +136,32 @@ export default function FormulirPage() {
   };
 
   useEffect(() => {
-    if (editReport?.foto && editReport.foto.length > 0) {
-      setPhotos([...editReport.foto]);
+    if (editReport) {
+      form.reset({
+        id: editReport.id,
+        tanggalInput: tanggalToDatetimeLocal(
+          editReport.tanggal,
+          editReport.createdAt
+        ),
+        lokasi: editReport.lokasi || "",
+        petugas: editReport.petugas || "",
+        targetKinerja: editReport.targetKinerja || "",
+        sasaran: editReport.sasaran || "",
+        indikator: editReport.indikator || "",
+        judulKegiatan: editReport.judulKegiatan || "",
+        arahanTemuan: editReport.arahanTemuan || "",
+        status: editReport.status || "Perlu Tindaklanjut",
+        tindakLanjut: editReport.tindakLanjut || "",
+      });
+
+      if (editReport.foto && editReport.foto.length > 0) {
+        setPhotos([...editReport.foto]);
+      }
+      if (editReport.tindakLanjut) {
+        tindakLanjutTouched.current = true;
+      }
     }
-    if (editReport?.tindakLanjut) {
-      tindakLanjutTouched.current = true;
-    }
-  }, [editReport]);
+  }, [editReport, form]);
 
   useEffect(() => {
     // Reset indikator if sasaran changes and it's not in the new list

@@ -19,66 +19,82 @@ import type { Report } from "./store";
 const CONTENT_W = "180mm";
 const CONTENT_H = "267mm";
 
-function buildPhotoHtml(photos: string[]): string {
+async function checkIsPortrait(src: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img.height > img.width);
+    img.onerror = () => resolve(true);
+    img.src = src;
+  });
+}
+
+async function buildPhotoHtml(photos: string[]): Promise<string> {
   if (!photos || photos.length === 0) return "";
+
+  const containerStyle = `border-bottom: 1px solid #333; background: #fff; padding: 12px; box-sizing: border-box;`;
+  const imgStyle = `max-width: 100%; max-height: 350px; object-fit: contain; border: 2px solid #555; padding: 4px; box-sizing: border-box; display: block; margin: 0 auto; background: #fafafa;`;
 
   if (photos.length === 1) {
     return `
-    <tr>
-      <td colspan="3" style="text-align:center; padding:4px; border:1px solid #333; background:#fff;">
-        <img src="${photos[0]}" style="max-width:100%; max-height:350px; width:auto; height:auto; display:inline-block; object-fit:contain;" />
-      </td>
-    </tr>`;
+      <div style="${containerStyle}">
+        <img src="${photos[0]}" style="${imgStyle}" />
+      </div>`;
   }
 
-  // 2 photos side by side using nested table (html2canvas doesn't handle flex well)
-  return `
-    <tr>
-      <td colspan="3" style="padding:4px; border:1px solid #333; background:#fff;">
-        <table style="width:100%; border:none; border-collapse:collapse;">
-          <tr>
-            <td style="width:50%; padding:0 2px 0 0; border:none;">
-              <img src="${photos[0]}" alt="Foto 1" style="width:100%; height:auto; display:block; object-fit:cover;" />
-            </td>
-            <td style="width:50%; padding:0 0 0 2px; border:none;">
-              <img src="${photos[1]}" alt="Foto 2" style="width:100%; height:auto; display:block; object-fit:cover;" />
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>`;
+  const isPortrait = await checkIsPortrait(photos[0]);
+
+  if (isPortrait) {
+    // Side by side
+    return `
+      <div style="${containerStyle} display: flex; gap: 16px; justify-content: center;">
+        <div style="flex: 1;">
+          <img src="${photos[0]}" style="${imgStyle} width: 100%;" />
+        </div>
+        <div style="flex: 1;">
+          <img src="${photos[1]}" style="${imgStyle} width: 100%;" />
+        </div>
+      </div>`;
+  } else {
+    // Top and bottom
+    return `
+      <div style="${containerStyle}">
+        <img src="${photos[0]}" style="${imgStyle} margin-bottom: 16px;" />
+        <img src="${photos[1]}" style="${imgStyle}" />
+      </div>`;
+  }
 }
 
 function buildRow(label: string, value: string, preWrap = false): string {
-  const thStyle = `width:32%; text-align:left; vertical-align:top; padding:6px 8px; border:1px solid #333; background:#eee; font-weight:700; font-size:12pt;`;
-  const colonStyle = `width:1.2em; text-align:center; vertical-align:top; padding:6px 0; border:1px solid #333; background:#eee; font-weight:700; font-size:12pt;`;
-  const tdStyle = `vertical-align:top; padding:6px 8px; border:1px solid #333; font-size:12pt;${preWrap ? " white-space:pre-wrap;" : ""}`;
+  const rowStyle = `display: flex; border-bottom: 1px solid #333;`;
+  const thStyle = `width: 32%; padding: 6px 8px; background: #eee; font-weight: 700; box-sizing: border-box; flex-shrink: 0;`;
+  const colonStyle = `width: 1.5em; text-align: center; padding: 6px 0; background: #eee; font-weight: 700; box-sizing: border-box; border-left: 1px solid #333; flex-shrink: 0;`;
+  const tdStyle = `flex: 1; padding: 6px 8px; box-sizing: border-box; border-left: 1px solid #333; ${preWrap ? "white-space: pre-wrap;" : ""}`;
 
   return `
-    <tr style="vertical-align:top;">
-      <th style="${thStyle}"><div style="margin:0; padding:0;">${label}</div></th>
-      <td style="${colonStyle}"><div style="margin:0; padding:0;">:</div></td>
-      <td style="${tdStyle}"><div style="margin:0; padding:0; ${preWrap ? 'white-space:pre-wrap;' : ''}">${value}</div></td>
-    </tr>`;
+    <div style="${rowStyle}">
+      <div style="${thStyle}">${label}</div>
+      <div style="${colonStyle}">:</div>
+      <div style="${tdStyle}">${value || ""}</div>
+    </div>`;
 }
 
 
-function createSafePdfContent(report: Report): HTMLElement {
+async function createSafePdfContent(report: Report): Promise<HTMLElement> {
   const wrapper = document.createElement("div");
 
   // Ukuran A4 area (setelah margin 15mm kiri-kanan)
   wrapper.style.width = "680px";
   wrapper.style.boxSizing = "border-box";
   wrapper.style.background = "#fff";
-  wrapper.style.fontFamily = "Calibri, Arial, sans-serif";
-  wrapper.style.fontSize = "11pt";
+  wrapper.style.fontFamily = "Calibri";
+  wrapper.style.fontSize = "12pt";
   wrapper.style.lineHeight = "1.5";
   wrapper.style.color = "#000";
   wrapper.style.padding = "0";
   wrapper.style.margin = "0";
 
   const photos = (report.foto || []).filter(Boolean);
-  const photoRow = buildPhotoHtml(photos);
+  const photoRow = await buildPhotoHtml(photos);
 
   const dataRows = [
     buildRow("Hari / Tanggal / Waktu", report.tanggal),
@@ -95,21 +111,11 @@ function createSafePdfContent(report: Report): HTMLElement {
 
   wrapper.innerHTML = `
   <div style="min-height:1000px;">
-
-    <table style="
-      width:100%;
-      border-collapse:collapse;
-      font-size:11pt;
-      line-height:1.5;
-    ">
-      <tbody>
-        ${photoRow}
-        ${dataRows}
-      </tbody>
-    </table>
-
+    <div style="border-top: 1px solid #333; border-left: 1px solid #333; border-right: 1px solid #333; display: flex; flex-direction: column;">
+      ${photoRow}
+      ${dataRows}
+    </div>
     <div style="height:120px;"></div>
-
   </div>
 `;
 
@@ -146,7 +152,7 @@ export async function generateReportPDF(
   pagebreak: { mode: ["avoid-all"] },
 };
 
-  const safeElement = createSafePdfContent(report);
+  const safeElement = await createSafePdfContent(report);
   
   const printContainer = document.createElement("div");
   printContainer.style.position = "fixed";

@@ -371,14 +371,28 @@
   width: 100%;
 }
 
-/* Two photos side by side */
+/* Two photos layout based on orientation */
 .report-photo-dual {
   display: flex;
   gap: 0.5rem;
   justify-content: center;
+  align-items: center;
 }
 
-.report-photo-dual img {
+.report-photo-dual.landscape {
+  flex-direction: column;
+}
+
+.report-photo-dual.portrait {
+  flex-direction: row;
+}
+
+.report-photo-dual.landscape img {
+  width: 100%;
+  max-height: none;
+}
+
+.report-photo-dual.portrait img {
   width: calc(50% - 0.25rem);
   max-height: 120mm;
 }

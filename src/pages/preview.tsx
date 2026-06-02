@@ -15,9 +15,21 @@ export default function PreviewPage() {
   const printRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [fallbackReport, setFallbackReport] = useState<any>(null);
+  const [isPortrait, setIsPortrait] = useState(true);
 
   const reportFromStore = id ? getReport(id) : null;
   const report = reportFromStore || fallbackReport;
+  const photos = report?.foto || [];
+
+  useEffect(() => {
+    if (photos.length > 0) {
+      const img = new Image();
+      img.src = photos[0];
+      img.onload = () => {
+        setIsPortrait(img.height > img.width);
+      };
+    }
+  }, [photos]);
 
   useEffect(() => {
     if (!reportFromStore && id) {
@@ -71,7 +83,6 @@ export default function PreviewPage() {
     }
   };
 
-  const photos = report.foto || [];
   const hasPhotos = photos.length > 0;
 
   /** Rows definition: label | value */
@@ -149,8 +160,8 @@ export default function PreviewPage() {
                       style={{ width: "100%", height: "auto" }}
                     />
                   ) : (
-                    <div className="report-photo-dual">
-                      {photos.map((src, idx) => (
+                    <div className={`report-photo-dual ${isPortrait ? "portrait" : "landscape"}`}>
+                      {photos.map((src: string, idx: number) => (
                         <img
                           key={idx}
                           src={src}

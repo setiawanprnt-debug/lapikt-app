@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { parseISO, format } from "date-fns";
+import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import {
   ChevronDown,
@@ -36,10 +36,19 @@ function buildGroupedTree(reports: Report[]) {
     // Month group
     let monthKey: string;
     try {
-      const date = parseISO(report.createdAt);
+      const date = new Date(report.createdAt);
+      if (Number.isNaN(date.getTime())) {
+        throw new Error("Invalid date");
+      }
       monthKey = format(date, "MMMM yyyy", { locale: idLocale });
     } catch {
-      monthKey = "Bulan Tidak Diketahui";
+      // Fallback: try to extract month and year from report.tanggal (e.g. "Jumat, 1 Desember 2023")
+      const match = report.tanggal?.match(/([a-zA-Z]+)\s+(\d{4})/);
+      if (match) {
+        monthKey = `${match[1]} ${match[2]}`;
+      } else {
+        monthKey = "Bulan Tidak Diketahui";
+      }
     }
 
     if (!tree[monthKey]) tree[monthKey] = {};
