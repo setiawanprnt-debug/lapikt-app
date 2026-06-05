@@ -84,7 +84,6 @@ export default function FormulirPage() {
   const { addReport, updateReport, getReport } = useReports();
   const { toast } = useToast();
   const [photos, setPhotos] = useState<string[]>([]);
-  const tindakLanjutTouched = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const searchString = useSearch();
@@ -157,9 +156,6 @@ export default function FormulirPage() {
       if (editReport.foto && editReport.foto.length > 0) {
         setPhotos([...editReport.foto]);
       }
-      if (editReport.tindakLanjut) {
-        tindakLanjutTouched.current = true;
-      }
     }
   }, [editReport, form]);
 
@@ -174,19 +170,6 @@ export default function FormulirPage() {
       form.setValue("indikator", "");
     }
   }, [selectedSasaran, availableIndikators, form]);
-
-  useEffect(() => {
-    if (tindakLanjutTouched.current) return;
-    if (!judulKegiatan.trim() || !arahanTemuan.trim()) return;
-
-    const timer = window.setTimeout(() => {
-      if (!tindakLanjutTouched.current) {
-        applyTindakLanjutSuggestion();
-      }
-    }, 600);
-
-    return () => window.clearTimeout(timer);
-  }, [judulKegiatan, arahanTemuan]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -259,7 +242,6 @@ export default function FormulirPage() {
     } else {
       form.reset();
       setPhotos([]);
-      tindakLanjutTouched.current = false;
     }
   };
 
@@ -392,7 +374,7 @@ export default function FormulirPage() {
                   <FormItem>
                     <FormLabel>Target Kinerja</FormLabel>
                     <FormControl>
-                      <Input placeholder="Target kinerja yang diharapkan" {...field} />
+                      <Input placeholder="Target kinerja yang diharapkan, contoh : 1 saluran air" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -465,7 +447,7 @@ export default function FormulirPage() {
                   <FormItem>
                     <FormLabel>Judul Kegiatan</FormLabel>
                     <FormControl>
-                      <Input placeholder="Masukkan judul kegiatan" {...field} />
+                      <Input placeholder="Masukkan judul kegiatan, contoh : Perbaikan saluran air" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -480,7 +462,7 @@ export default function FormulirPage() {
                     <FormLabel>Arahan / Temuan</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Deskripsikan arahan atau temuan di lapangan..." 
+                        placeholder="Deskripsikan arahan atau temuan di lapangan, contoh : Terdapat beberapa titik genangan air setelah hujan" 
                         className="min-h-[100px]"
                         {...field} 
                       />
@@ -543,16 +525,13 @@ export default function FormulirPage() {
                     
                     <FormControl>
                       <Textarea
-                        placeholder="Deskripsikan tindak lanjut yang dilakukan...Contoh : 
+                        placeholder="Deskripsikan tindak lanjut yang dilakukan...
+                        Contoh : 
                         1. Melakukan koordinasi dengan dinas terkait
                         2. Membuat surat kepada dinas terkait
                         3. Melakukan monitoring wilayah setiap minggu sekali"
                         className="min-h-[100px]"
                         {...field}
-                        onChange={(e) => {
-                          tindakLanjutTouched.current = true;
-                          field.onChange(e);
-                        }}
                       />
                     </FormControl>
                     <FormMessage />
