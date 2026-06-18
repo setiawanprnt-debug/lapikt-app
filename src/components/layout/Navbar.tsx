@@ -21,8 +21,10 @@ export function Navbar() {
             <Link
               href="/formulir"
               className={cn(
-                "transition-colors hover:text-foreground flex items-center gap-1.5",
-                location === "/formulir" ? "text-foreground" : "text-muted-foreground"
+                "transition-all duration-200 flex items-center gap-1.5 px-3 py-1.5 rounded-md border font-semibold",
+                location === "/formulir" 
+                  ? "bg-primary/10 text-primary border-primary shadow-sm" 
+                  : "text-muted-foreground border-border/50 hover:border-border hover:bg-accent/50 hover:text-foreground"
               )}
             >
               <FileText className="h-4 w-4" />
@@ -31,10 +33,10 @@ export function Navbar() {
             <Link
               href="/arsip"
               className={cn(
-                "transition-colors hover:text-foreground flex items-center gap-1.5",
+                "transition-all duration-200 flex items-center gap-1.5 px-3 py-1.5 rounded-md border font-semibold",
                 location.startsWith("/arsip") || location.startsWith("/preview")
-                  ? "text-foreground"
-                  : "text-muted-foreground"
+                  ? "bg-primary/10 text-primary border-primary shadow-sm"
+                  : "text-muted-foreground border-border/50 hover:border-border hover:bg-accent/50 hover:text-foreground"
               )}
             >
               <ClipboardList className="h-4 w-4" />
